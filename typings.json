@@ -1,6 +1,7 @@
 {
 	"name": "react-redux",
 	"ambient": false,
+	"main":"react-redux.d.ts",
 	"dependencies": {
 		"redux": "github:andrew-w-ross/typings-redux"
 	},
