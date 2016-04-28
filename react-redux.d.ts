@@ -20,12 +20,18 @@ declare module ReactRedux {
 		withRef?: boolean;
 	}
 
-	export function connect<TElement extends Function>(
+	type ComponentConstructor<P> = React.ComponentClass<P> | React.StatelessComponent<P>
+
+	function wrapWithConnect<T extends ComponentConstructor<any>>(
+		component: T
+	): T
+
+	export function connect(
 		mapStateToProps?: IMapStateToProps,
 		mapDispatchToProps?: IMapDispatchToProps,
 		mergeProps?: (stateProps: Object, dispatchProps: Object, ownProps: Object) => Object,
 		options?: IConnectOptions
-	): TElement;
+	): typeof wrapWithConnect;
 }
 
 export = ReactRedux;
