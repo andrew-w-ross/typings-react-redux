@@ -28,7 +28,7 @@ declare module ReactRedux {
 
 	export function connect(
 		mapStateToProps?: IMapStateToProps,
-		mapDispatchToProps?: IMapDispatchToProps,
+		mapDispatchToProps?: IMapDispatchToProps | Object,
 		mergeProps?: (stateProps: Object, dispatchProps: Object, ownProps: Object) => Object,
 		options?: IConnectOptions
 	): typeof wrapWithConnect;
