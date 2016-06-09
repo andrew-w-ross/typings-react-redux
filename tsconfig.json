@@ -1,13 +1,10 @@
 {
 	"compilerOptions": {
 		"target": "es6",
-		"noEmit": true,		
+		"noEmit": true,
 		"suppressExcessPropertyErrors": true,
 		"experimentalDecorators": true,
 		"module": "commonjs",
 		"jsx":"react"
-	},
-	"exclude": [
-		"typings"
-	]
+	}
 }
