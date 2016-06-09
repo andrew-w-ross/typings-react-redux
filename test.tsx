@@ -2,6 +2,7 @@ import {Provider, connect, IMapDispatchToProps, IMapStateToProps, IConnectOption
 import {createStore, Action, combineReducers, Dispatch, bindActionCreators} from "redux";
 import * as React from "react";
 
+// Setting up the Redux stuff.
 interface IState {
 	greeting: string;
 }
@@ -32,32 +33,29 @@ const rootReducer = combineReducers<IState>({
 
 const store = createStore(rootReducer);
 
+//////////////////////////////////////////////////
+
 interface IGreeterProps {
+	// Injected props
 	subject?: string;
-	onGreet?: (newGreet: string) => any
+	onGreet?: (newGreet: string) => IAction;
+
+	// Other props
+	id?: number;
 };
 
-
-function mapStateToProps(state: IState): IGreeterProps {
-	return {
-		subject: state.greeting
-	};
-}
-
-function mapDispatchToProps(dispatch: Dispatch<any>): IGreeterProps {
-	return {
-		onGreet: bindActionCreators(changeGreeting, dispatch)
-	};
-}
-
-@connect(mapStateToProps, mapDispatchToProps)
-class Greeter extends React.Component<IGreeterProps & {mandatory: string}, {}> {
+// Trying out the decorator.
+@connect(
+	(state: IState) => ({subject: state.greeting}),
+	dispatch => ({onGreet: bindActionCreators(changeGreeting, dispatch)})
+)
+class Greeter extends React.Component<IGreeterProps, {}> {
 	render() {
 		return (
 			<div>
-				<h1>Hello {this.props.subject}</h1>
+				<h1>Hello {this.props.subject} from {this.props.id}</h1>
 				<input type="text" ref="input"/>
-				<button onClick={() => this.greet() }></button>
+				<button onClick={() => this.greet()}></button>
 			</div>
 		);
 	}
@@ -69,30 +67,51 @@ class Greeter extends React.Component<IGreeterProps & {mandatory: string}, {}> {
 	}
 }
 
-<Greeter mandatory="mandatory" />
+// By defining the methods directly on the decorator, we can infer the type of dispatch. But we still have to define the Props object of the class.
 
-// Just trying out the old style and the decorator
-const ConnectedGreeter = connect(mapStateToProps, mapDispatchToProps)(Greeter)
+// Works fine.
+<Greeter id={1} />
+
+// When using it without the decorator ("old style"), we get the same result.
+const ConnectedGreeter = connect(
+	(state: IState) => ({subject: state.greeting}),
+	dispatch => ({onGreet: bindActionCreators(changeGreeting, dispatch)})
+)(Greeter);
+
+<ConnectedGreeter id={1} />
 
 // Trying out with function components
 function FunctionGreeter(props: IGreeterProps) {
 	return (
 		<div>
 			<h1>Hello {props.subject}</h1>
-			<input type="text" ref="input"/>
+			<input type="text" ref="input" />
 		</div>
 	);
 }
-const ConnectedFunctionGreeter = connect(mapStateToProps, mapDispatchToProps)(FunctionGreeter);
+
+const ConnectedFunctionGreeter = connect(
+	(state: IState) => ({subject: state.greeting} as IGreeterProps),
+	dispatch => ({onGreet: bindActionCreators(changeGreeting, dispatch)} as IGreeterProps)
+)(FunctionGreeter);
 
 const App = () => (
 	<Provider store={store}>
-		<ConnectedGreeter mandatory="mandatory" />
-		<ConnectedFunctionGreeter />
+		<ConnectedFunctionGreeter id={0} />
 	</Provider>
 );
 
-function connected<P, SP, DP>(
+// The function connect has two signatures:
+//  * One with one type parameter, which has to be the type of the unique props object that is used in the component and in both mapStateToProps and mapDispatchToProps.
+//    The component props type cannot infer the type of connect, so either you set it explicitely, either you make sure mapDispatchToProps and mapStateToProps
+//    properly return that type.
+//  * Another with three type parameters, one for each prop object. Since the component one cannot be infered, you have to set all three to use that one.
+//    The component props type must NOT contain the injected props, thus the props type which is effectively written on the component parameters must be the intersection
+//    of all three. Thanks to this, the connected function won't have the injected props in its props type.
+
+
+// The second signature isn't terribly useful (and rather complex) on its own, but it can be used to write another connect function that infers everything:
+function connectFunction<P, SP, DP>(
     {defaultProps, mapStateToProps, mapDispatchToProps, mergeProps, options}: {
         defaultProps: P,
         mapStateToProps?: IMapStateToProps<P, SP>,
@@ -106,11 +125,16 @@ function connected<P, SP, DP>(
     return connect<P, SP, DP>(mapStateToProps, mapDispatchToProps, mergeProps, options)(component);
 }
 
-const Test = connected({
-    defaultProps: {} as {yolo: number},
-    mapStateToProps: ({lol}: {lol: string}) => ({lol})
-}, function Component({lol, yolo}) {
+// Basically, it changes the connect application from `connect(mapStateToProps, mapDispatchToProps)(component)` to `connect({defaultProps, mapStateToProps, mapDispatchToProps}, component)`
+// The defaultProps are mandatory since they allow it to infer the component props type.
+
+// An exemple :
+const Test = connectFunction({
+    defaultProps: {} as {yolo: number}, // This defines the component props.
+    mapStateToProps: ({lol}: {lol: string}) => ({lol}), // Injected props from the state.
+	mapDispatchToProps: dispatch => ({action: bindActionCreators(changeGreeting, dispatch)}) // Injected actions.
+}, function Component({lol, yolo, action}) { // And magically, my props are all there, correctly infered!
     return <div>{lol}{yolo}</div>;
 });
 
-<Test yolo={3} />;
+<Test yolo={3} />; // And here, the resulted component only has the component props!
