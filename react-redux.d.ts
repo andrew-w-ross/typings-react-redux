@@ -23,14 +23,14 @@ interface ComponentConnector<P> {
 
 export function connect<P>(
 	mapStateToProps?: IMapStateToProps<P, P>,
-	mapDispatchToProps?: IMapDispatchToProps<P, P>,
+	mapDispatchToProps?: IMapDispatchToProps<P, P> | {},
 	mergeProps?: (stateProps: P, dispatchProps: P, ownProps: P) => P,
 	options?: IConnectOptions
 ): ComponentConnector<P>
 
 export function connect<P, SP, DP>(
 	mapStateToProps?: IMapStateToProps<P, SP>,
-	mapDispatchToProps?: IMapDispatchToProps<P, DP>,
+	mapDispatchToProps?: IMapDispatchToProps<P, DP> | {},
 	mergeProps?: (stateProps: SP, dispatchProps: DP, ownProps: P) => P & DP & SP,
 	options?: IConnectOptions
 ): ComponentConnector<P>
